@@ -45,13 +45,11 @@ def encrypt_endpoint():
     combined_data = key + b'|||' + encrypted_message
     binary_data = text_to_binary(combined_data) + '1111111111111110'
 
-    # Open the image in memory
     img = Image.open(image_file).convert('RGB')
     pixels = list(img.getdata())
     data_index = 0
     new_pixels = []
 
-    # Modify the image pixels to embed the binary data
     for pixel in pixels:
         r, g, b = pixel
         new_pixel = []
@@ -64,15 +62,14 @@ def encrypt_endpoint():
 
     img.putdata(new_pixels)
 
-    # Save the image in memory instead of saving to disk
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format='PNG')
     img_byte_arr.seek(0)
 
-    # Return the image directly as a response
-    return send_file(img_byte_arr, mimetype='image/png',
-                     download_name='encrypted_image.png', as_attachment=True,
-                     headers={'X-Encryption-Key': key.decode()})
+    response = send_file(img_byte_arr, mimetype='image/png',
+                         download_name='output.png', as_attachment=True)
+    response.headers['X-Encryption-Key'] = key.decode()
+    return response
 
 
 @app.route('/decrypt', methods=['POST'])

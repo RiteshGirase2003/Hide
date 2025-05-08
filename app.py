@@ -5,8 +5,8 @@ from cryptography.fernet import Fernet
 import io
 
 app = Flask(__name__)
-CORS(app, origins=["https://riteshgirase2003.github.io/Hide/"])  # Enable CORS for all domains on all routes
-# CORS(app)
+# CORS(app, origins=["https://riteshgirase2003.github.io/Hide/"])  # Enable CORS for all domains on all routes
+CORS(app)
 # Helper functions for encryption/decryption
 def generate_key():
     return Fernet.generate_key()

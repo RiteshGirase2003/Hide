@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Steganography Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #drag-drop {
+      border: 2px dashed #4CAF50;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    #drag-drop:hover {
+      background-color: #eafbe9;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      resize: none;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #45a049;
+    }
+
+    .preview-container {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .preview-container img {
+      max-width: 150px;
+      max-height: 150px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .output-container {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .output-container img {
+      max-width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .button-group {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hide a Message in an Image</h1>
+
+    <div id="drag-drop" ondrop="handleDrop(event)" ondragover="event.preventDefault()" onpaste="handlePaste(event)">
+      Drag & drop an image here, <button class="btn" onclick="document.getElementById('image-input').click()">Browse</button> or Paste an image
+      <input type="file" id="image-input" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+    </div>
+
+    <div class="preview-container" id="preview-container" style="display:none;">
+      <img id="image-preview" src="" alt="Image Preview">
+    </div>
+
+    <div id="message-input" style="display: none;">
+      <textarea id="secret-message" rows="4" placeholder="Enter your secret message here..." onkeydown="handleKeyPress(event)"></textarea>
+      <div>
+        <button class="btn" onclick="encryptImage()">Encrypt</button>
+        <button class="btn" onclick="decryptImage()">Decrypt</button>
+      </div>
+    </div>
+
+    <div class="output-container" id="output-container">
+      <p id="message-output"></p>
+      <img id="output-image" src="" alt="Output">
+      <div class="button-group" id="output-buttons" style="display:none;">
+        <button class="btn" onclick="downloadImage()">Download</button>
+        <button class="btn" onclick="copyImage()">Copy Image</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedFile = null;
+
+    // List of images to choose from
+    const images = ['img1.jpg', 'img2.jpg', 'img3.jpg'];
+
+    // Load a random image from the list if no image is selected
+    function loadDefaultImage() {
+      const randomIndex = Math.floor(Math.random() * images.length);
+      const image = images[randomIndex];
+      selectedFile = image;  // This is just a placeholder to simulate the image being selected
+      showPreview(image);
+    }
+
+    function handleFileSelect(e) {
+      selectedFile = e.target.files[0];
+      showPreview(selectedFile);
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      selectedFile = e.dataTransfer.files[0];
+      showPreview(selectedFile);
+    }
+
+    function handlePaste(e) {
+      const items = e.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") === 0) {
+          const blob = items[i].getAsFile();
+          selectedFile = blob;
+          showPreview(blob);
+        }
+      }
+    }
+
+    function showPreview(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = document.getElementById('image-preview');
+        img.src = e.target.result;
+        document.getElementById('preview-container').style.display = 'block';
+        document.getElementById('message-input').style.display = 'block';
+      };
+      if (typeof file === "string") {
+        // If it's a string (default image path), show it directly
+        document.getElementById('image-preview').src = file;
+        document.getElementById('preview-container').style.display = 'block';
+        document.getElementById('message-input').style.display = 'block';
+      } else {
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (!document.getElementById('secret-message').value.trim()) {
+          decryptImage();
+        } else {
+          encryptImage();
+        }
+      }
+    }
+
+    function encryptImage() {
+      const message = document.getElementById('secret-message').value;
+      if (!selectedFile || !message.trim()) return alert("Please select an image and enter a message.");
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('message', message);
+
+      fetch('https://hide-x3l6.onrender.com/encrypt', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Encryption failed");
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const outputImage = document.getElementById("output-image");
+        outputImage.src = url;
+        document.getElementById('message-input').style.display = 'none';
+        document.getElementById("output-container").style.display = "block";
+        document.getElementById("message-output").innerText = "Encrypted image ready!";
+        document.getElementById("output-buttons").style.display = "flex";
+      })
+      .catch(err => {
+        alert("Encryption error: " + err.message);
+      });
+    }
+
+    function decryptImage() {
+      if (!selectedFile) return alert("Please select an image first.");
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      fetch('https://hide-x3l6.onrender.com/decrypt', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        const textarea = document.getElementById('secret-message');
+        textarea.value = data.message || "No message found.";
+        textarea.disabled = true;
+        document.getElementById("output-container").style.display = "none";
+        document.getElementById("message-output").innerText = "";
+        document.getElementById("output-buttons").style.display = "none";
+      })
+      .catch(err => {
+        alert("Decryption error: " + err.message);
+      });
+    }
+
+    function downloadImage() {
+      const link = document.createElement('a');
+      link.href = document.getElementById("output-image").src;
+      link.download = "encrypted_image.png";
+      link.click();
+    }
+
+    function copyImage() {
+      const img = document.getElementById("output-image");
+      fetch(img.src)
+        .then(res => res.blob())
+        .then(blob => {
+          const item = new ClipboardItem({ [blob.type]: blob });
+          return navigator.clipboard.write([item]);
+        })
+        .catch(err => {
+          console.error("Failed to copy image: " + err.message);
+        });
+    }
+
+    // On page load, check if image is already selected or use the default image
+    window.onload = function() {
+      if (!selectedFile) {
+        loadDefaultImage();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -47,7 +47,7 @@ def encrypt_endpoint():
     img = Image.open(image_file).convert('RGB')
 
     MAX_SIZE = (800, 800)
-    img.thumbnail(MAX_SIZE, Image.ANTIALIAS)
+    img.thumbnail(MAX_SIZE, Image.Resampling.LANCZOS)
     pixels = list(img.getdata())
     data_index = 0
     new_pixels = []

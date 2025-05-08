@@ -9,19 +9,16 @@ import tempfile
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all domains on all routes
 
-
+# Helper functions for encryption/decryption
 def generate_key():
     return Fernet.generate_key()
-
 
 def encrypt_message(message, key):
     f = Fernet(key)
     return f.encrypt(message.encode())
 
-
 def text_to_binary(data_bytes):
     return ''.join(format(byte, '08b') for byte in data_bytes)
-
 
 def binary_to_bytes(binary_data):
     bytes_list = []
@@ -31,7 +28,6 @@ def binary_to_bytes(binary_data):
             break
         bytes_list.append(int(byte, 2))
     return bytes(bytes_list)
-
 
 @app.route('/encrypt', methods=['POST'])
 def encrypt_endpoint():
@@ -71,7 +67,6 @@ def encrypt_endpoint():
                      as_attachment=True,
                      headers={'X-Encryption-Key': key.decode()})
 
-
 @app.route('/decrypt', methods=['POST'])
 def decrypt_endpoint():
     if 'image' not in request.files:
@@ -103,6 +98,6 @@ def decrypt_endpoint():
     except Exception as e:
         return jsonify({'error': f'Decryption failed: {str(e)}'}), 500
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))  # Use environment variable or fallback to 5000
+    app.run(debug=True, host='0.0.0.0', port=port)

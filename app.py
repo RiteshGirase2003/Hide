@@ -3,8 +3,6 @@ from flask_cors import CORS
 from PIL import Image
 from cryptography.fernet import Fernet
 import io
-import os
-import tempfile
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all domains on all routes
@@ -42,11 +40,13 @@ def encrypt_endpoint():
     combined_data = key + b'|||' + encrypted_message
     binary_data = text_to_binary(combined_data) + '1111111111111110'
 
+    # Open the image in memory
     img = Image.open(image_file).convert('RGB')
     pixels = list(img.getdata())
     data_index = 0
     new_pixels = []
 
+    # Modify the image pixels to embed the binary data
     for pixel in pixels:
         r, g, b = pixel
         new_pixel = []
@@ -59,13 +59,16 @@ def encrypt_endpoint():
 
     img.putdata(new_pixels)
 
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-    img.save(temp_file.name)
+    # Save the image in memory instead of saving to disk
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
 
-    return send_file(temp_file.name, mimetype='image/png',
-                     download_name='encrypted_image.png',
-                     as_attachment=True,
+    # Return the image directly as a response
+    return send_file(img_byte_arr, mimetype='image/png',
+                     download_name='encrypted_image.png', as_attachment=True,
                      headers={'X-Encryption-Key': key.decode()})
+
 
 @app.route('/decrypt', methods=['POST'])
 def decrypt_endpoint():
@@ -73,16 +76,21 @@ def decrypt_endpoint():
         return jsonify({'error': 'Image file is required'}), 400
 
     image_file = request.files['image']
+    
+    # Open the image in memory
     img = Image.open(image_file).convert('RGB')
     pixels = list(img.getdata())
 
+    # Extract the binary data from the image
     binary_data = ''
     for pixel in pixels:
         for color in pixel:
             binary_data += str(color & 1)
 
+    # Convert the binary data to bytes
     hidden_bytes = binary_to_bytes(binary_data)
 
+    # Check if the hidden data contains the expected delimiter
     if b'|||' not in hidden_bytes:
         return jsonify({'error': 'No valid hidden data found'}), 400
 
@@ -99,5 +107,4 @@ def decrypt_endpoint():
         return jsonify({'error': f'Decryption failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", 5000))  # Use environment variable or fallback to 5000
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=5000)

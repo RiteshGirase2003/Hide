@@ -45,7 +45,8 @@ def encrypt_endpoint():
     combined_data = key + b'|||' + encrypted_message
     binary_data = text_to_binary(combined_data) + '1111111111111110'
 
-    img = Image.open(image_file).convert('RGB')
+    MAX_SIZE = (800, 800)
+    img.thumbnail(MAX_SIZE, Image.ANTIALIAS)
     pixels = list(img.getdata())
     data_index = 0
     new_pixels = []

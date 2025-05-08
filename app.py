@@ -27,6 +27,11 @@ def binary_to_bytes(binary_data):
         bytes_list.append(int(byte, 2))
     return bytes(bytes_list)
 
+@app.route('/api-check', methods=['GET'])
+def api_check():
+    return jsonify({'msg': 'working'}), 200
+
+    
 @app.route('/encrypt', methods=['POST'])
 def encrypt_endpoint():
     if 'image' not in request.files or 'message' not in request.form:

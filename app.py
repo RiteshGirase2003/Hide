@@ -44,6 +44,7 @@ def encrypt_endpoint():
     encrypted_message = encrypt_message(secret_message, key)
     combined_data = key + b'|||' + encrypted_message
     binary_data = text_to_binary(combined_data) + '1111111111111110'
+    img = Image.open(image_file).convert('RGB')
 
     MAX_SIZE = (800, 800)
     img.thumbnail(MAX_SIZE, Image.ANTIALIAS)
